@@ -1,0 +1,40 @@
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; padding: 0; }
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  background: #f0f2f5;
+}
+
+.page { padding: 16px 24px; }
+.page-card { margin-bottom: 16px; }
+
+.text-muted { color: #909399; font-size: 13px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.mt16 { margin-top: 16px; }
+.mb16 { margin-bottom: 16px; }
+
+/* 登录页 */
+.login-wrap {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1f3a5f 0%, #2b5876 50%, #4e4376 100%);
+}
+.login-card { width: 420px; }
+.login-title { text-align: center; margin-bottom: 8px; font-size: 20px; font-weight: 600; }
+.login-sub { text-align: center; color: #909399; font-size: 13px; margin-bottom: 20px; }
+
+/* 布局 */
+.layout-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #1f3a5f; color: #fff; padding: 0 20px; height: 56px;
+}
+.layout-title { font-size: 17px; font-weight: 600; letter-spacing: 1px; }
+.layout-header .el-menu { background: transparent; border-bottom: none; }
+.layout-header .el-menu-item { color: #cfd8e3; }
+.layout-header .el-menu-item.is-active { color: #ffd04b; }
+.user-chip { display: flex; align-items: center; gap: 8px; color: #fff; }
+
+.stat-num { font-size: 28px; font-weight: 700; }
+.section-title { font-weight: 600; margin: 12px 0 8px; }
