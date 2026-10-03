@@ -93,6 +93,16 @@
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="夜间失效" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.nightFailureStatus"
+                      :type="row.nightFailureHandled ? 'success' : 'danger'" size="small"
+                      :effect="row.nightFailureHandled ? 'plain' : 'dark'">
+                {{ row.nightFailureHandled ? '已加固' : '待处置' }}
+              </el-tag>
+              <span v-else class="text-muted">-</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="ownerOrg" label="权属单位" width="130">
             <template #default="{ row }">{{ row.ownerOrg || '-' }}</template>
           </el-table-column>
@@ -175,6 +185,7 @@ const tabs = computed(() => {
     case 'STREET_DUTY':
       return [
         { label: '待应急处置', list: list.filter(i => i.emergencyStatus !== 'SECURED') },
+        { label: '夜间失效', list: list.filter(i => i.nightFailureStatus && !i.nightFailureHandled) },
         { label: '待权属排查', list: list.filter(i => i.ownerStatus === 'INVESTIGATING') },
         { label: '责任待定', list: list.filter(i => i.ownerStatus === 'PENDING') },
         { label: '全部', list }

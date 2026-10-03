@@ -22,6 +22,10 @@ public class MetaService {
         m.put("roadTypes", IncidentService.ROAD_TYPES);
         m.put("dangerLevels", IncidentService.DANGER_LEVELS);
         m.put("measureTypes", EmergencyService.MEASURE_TYPES);
+        m.put("nightCauses", NightFailureService.CAUSES);
+        m.put("nightDecisions", NightFailureService.DECISIONS);
+        m.put("sensitiveLocations", NightFailureService.SENSITIVE_LOCATIONS);
+        m.put("lightings", NightFailureService.LIGHTINGS);
         m.put("coordUnits", List.of("燃气", "电力", "通信"));
         m.put("damageTypes", List.of("人身伤害", "车辆损失", "财产损失"));
         m.put("ownerUnits", userRepo.findByRole(Constants.Role.OWNER_UNIT).stream()

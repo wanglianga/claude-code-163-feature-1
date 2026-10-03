@@ -45,4 +45,9 @@ public class StatsController {
     public ApiResponse<List<Map<String, Object>>> emergency() {
         return ApiResponse.ok(statsService.emergency());
     }
+
+    @GetMapping("/night-failures")
+    public ApiResponse<Map<String, Object>> nightFailures() {
+        return ApiResponse.ok(statsService.nightFailures());
+    }
 }

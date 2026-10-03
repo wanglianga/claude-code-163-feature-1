@@ -1,6 +1,7 @@
 package com.city.manhole.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,27 @@ public final class Req {
                                     Boolean hasDamage, String damageDesc, String dangerLevel) {}
 
     public record SecureReq(List<String> measures, BigDecimal cost, String note) {}
+
+    /** 登记夜间围护失效与二次事故 */
+    public record NightFailureRegisterReq(LocalDateTime displacedAt, LocalDateTime secondAccidentAt,
+                                          String secondAccidentDesc, Boolean hasInjury, String injuryDesc,
+                                          List<String> protectionPhotos, String sensitiveLocation,
+                                          String peakHours, String lighting, String cameraIds,
+                                          Boolean detourNotice, String detourNote,
+                                          Boolean trafficPoliceAssist, String trafficPoliceNote,
+                                          LocalDateTime patrolArrivedAt) {}
+
+    /** 巡查到场核查（补充围护照片） */
+    public record NightPatrolReq(List<String> protectionPhotos, String note) {}
+
+    /** 认定失效原因 */
+    public record NightAssessReq(String cause, String causeAnalysis) {}
+
+    /** 加派措施处置 */
+    public record NightHandleReq(List<String> decisions, String handleNote,
+                                 Boolean detourNotice, String detourNote,
+                                 Boolean trafficPoliceAssist, String trafficPoliceNote,
+                                 BigDecimal addCost) {}
 
     public record InvestigateReq(String manholeMarking, String pipelineInfo, String constructionHistory,
                                  String merchantInfo, String cityLedger, String conclusion,

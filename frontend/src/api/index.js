@@ -52,6 +52,13 @@ export const apiIncidentDetail = (id) => http.get(`/api/incidents/${id}`)
 export const apiDispatch = (id) => http.post(`/api/incidents/${id}/emergency/dispatch`)
 export const apiSecure = (id, data) => http.post(`/api/incidents/${id}/emergency/secure`, data)
 
+// ---------- 夜间围护失效与二次事故 ----------
+export const apiNightRegister = (id, data) => http.post(`/api/incidents/${id}/night-failure`, data)
+export const apiNightPatrol = (id, data) => http.post(`/api/incidents/${id}/night-failure/patrol`, data)
+export const apiNightAssess = (id, data) => http.post(`/api/incidents/${id}/night-failure/assess`, data)
+export const apiNightHandle = (id, data) => http.post(`/api/incidents/${id}/night-failure/handle`, data)
+export const apiNightSuggest = (id) => http.get(`/api/incidents/${id}/night-failure/suggest`)
+
 // ---------- 权属 ----------
 export const apiInvestigate = (id, data) => http.post(`/api/incidents/${id}/investigation`, data)
 export const apiClaim = (id, data) => http.post(`/api/incidents/${id}/claim`, data)
@@ -82,6 +89,7 @@ export const apiStatsDisputes = () => http.get('/api/stats/disputes')
 export const apiStatsTimeouts = () => http.get('/api/stats/repair-timeouts')
 export const apiStatsCompensation = () => http.get('/api/stats/compensation')
 export const apiStatsEmergency = () => http.get('/api/stats/emergency')
+export const apiStatsNightFailures = () => http.get('/api/stats/night-failures')
 
 // ---------- 管理 ----------
 export const apiUsers = () => http.get('/api/admin/users')

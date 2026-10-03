@@ -22,6 +22,7 @@ public class IncidentService {
     private final IncidentRepo incidentRepo;
     private final UserRepo userRepo;
     private final EmergencyMeasureRepo emergencyRepo;
+    private final NightProtectionFailureRepo nightRepo;
     private final InvestigationRepo investigationRepo;
     private final OwnerClaimRepo claimRepo;
     private final RepairOrderRepo repairOrderRepo;
@@ -132,6 +133,10 @@ public class IncidentService {
         m.put("emergencyStatus", inc.getEmergencyStatus());
         m.put("ownerStatus", inc.getOwnerStatus());
         m.put("responsibilityPending", inc.getResponsibilityPending());
+        nightRepo.findByIncidentId(inc.getId()).ifPresent(nf -> {
+            m.put("nightFailureStatus", nf.getStatus());
+            m.put("nightFailureHandled", Constants.NightFailureStatus.HANDLED.equals(nf.getStatus()));
+        });
         m.put("createdAt", inc.getCreatedAt());
         m.put("ownerOrg", inc.getOwnerId() == null ? null :
                 userRepo.findById(inc.getOwnerId()).map(User::getOrgName).orElse(null));
@@ -160,6 +165,24 @@ public class IncidentService {
             if (em.getOfficerId() != null) {
                 m.put("emergencyOfficer", userRepo.findById(em.getOfficerId()).map(User::getName).orElse(null));
             }
+        });
+
+        nightRepo.findByIncidentId(id).ifPresent(nf -> {
+            Map<String, Object> nm = new LinkedHashMap<>();
+            nm.put("failure", nf);
+            nm.put("photoList", readJson(nf.getProtectionPhotos()));
+            nm.put("causeName", NightFailureService.causeName(nf.getCause()));
+            nm.put("placeName", NightFailureService.placeName(nf.getSensitiveLocation()));
+            if (nf.getOfficerId() != null) {
+                nm.put("officerName", userRepo.findById(nf.getOfficerId()).map(User::getName).orElse(null));
+            }
+            if (nf.getPatrolId() != null) {
+                nm.put("patrolName", userRepo.findById(nf.getPatrolId()).map(User::getName).orElse(null));
+            }
+            if (nf.getHandledBy() != null) {
+                nm.put("handledByName", userRepo.findById(nf.getHandledBy()).map(User::getName).orElse(null));
+            }
+            m.put("nightFailure", nm);
         });
 
         List<Map<String, Object>> invs = new ArrayList<>();

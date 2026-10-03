@@ -22,6 +22,7 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepo userRepo;
     private final IncidentRepo incidentRepo;
     private final EmergencyMeasureRepo emergencyRepo;
+    private final NightProtectionFailureRepo nightFailureRepo;
     private final InvestigationRepo investigationRepo;
     private final OwnerClaimRepo claimRepo;
     private final RepairOrderRepo repairOrderRepo;
@@ -258,6 +259,121 @@ public class DataSeeder implements CommandLineRunner {
         cost(i10, "150", "900", "0", Constants.CostStatus.PENDING,
                 "[{\"party\":\"权属单位-市政工程公司\",\"amount\":1050,\"reason\":\"权属已确认，由权属单位承担全部费用\"}]",
                 null, 0);
+
+        // 11. 夜间围护失效（学校门口，外力破坏）：警示锥夜间被车辆撞倒，第二名骑车人摔伤，
+        //     已认定外力破坏并加派反光围挡/临时封道/专人值守，安排绕行提示并请交警协助
+        Incident i11 = base("MH20261001-0001", citizen2, "缺失", "育才路12号光明小学门口", "支路", "高",
+                false, null, 1);
+        i11.setStatus(Constants.IncidentStatus.SECURED);
+        i11.setEmergencyStatus(Constants.EmergencyStatus.SECURED);
+        i11.setOwnerStatus(Constants.OwnerStatus.PENDING);
+        i11.setResponsibilityPending(true);
+        i11.setEverPending(true);
+        i11.setHasDamage(true);
+        i11.setDamageDesc("二次事故：夜间骑车人摔入井口旁围挡区，左臂骨折");
+        incidentRepo.save(i11);
+        emergency(i11, 10, 60, 90, "警示锥,夜间反光标识", "700");
+        investigation(i11, "井圈标识磨损", "周边为雨水与通信管线交汇", "无近期施工登记",
+                "门卫称夜间常有车辆借道", "台账暂未登记", "PENDING", null, 1);
+        NightProtectionFailure nf11 = new NightProtectionFailure();
+        nf11.setIncidentId(i11.getId());
+        nf11.setOfficerId(street.getId());
+        nf11.setFirstReportAt(i11.getCreatedAt());
+        nf11.setProtectionPhotos("[\"/uploads/demo-cone-1.png\",\"/uploads/demo-night-1.png\"]");
+        nf11.setPatrolId(street.getId());
+        nf11.setPatrolArrivedAt(i11.getCreatedAt().plusHours(8).plusMinutes(25));
+        nf11.setDisplacedAt(i11.getCreatedAt().plusHours(7).plusHours(0).minusMinutes(10));
+        nf11.setSecondAccidentAt(i11.getCreatedAt().plusHours(8));
+        nf11.setSecondAccidentDesc("夜间 23 时许一辆小客车撞散警示锥后逃逸，警示锥移位至路边，次日凌晨第二名骑车人经过时因围挡缺失失控摔伤");
+        nf11.setHasInjury(true);
+        nf11.setInjuryDesc("骑车人左臂骨折、电动车受损，已送医");
+        nf11.setStatus(Constants.NightFailureStatus.HANDLED);
+        nf11.setCause(Constants.NightFailureCause.EXTERNAL_DAMAGE);
+        nf11.setCauseAnalysis("现场留有车辆碎片与刹车痕，监控显示小客车冲撞警示锥后离开，属外力破坏；原仅设警示锥，夜间抗冲撞能力不足。");
+        nf11.setDecisions("反光围挡,临时封道,专人值守");
+        nf11.setHandledBy(street.getId());
+        nf11.setHandledAt(i11.getCreatedAt().plusHours(9));
+        nf11.setHandleNote("凌晨加派反光围挡并临时封道，安排专人值守至早高峰后，已通知交警追查肇事车辆。");
+        nf11.setSensitiveLocation(Constants.SensitiveLocation.SCHOOL_GATE);
+        nf11.setPeakHours("07:00-08:00,16:30-18:00");
+        nf11.setLighting("昏暗");
+        nf11.setCameraIds("JX-0112,JX-0113");
+        nf11.setDetourNotice(true);
+        nf11.setDetourNote("在校门口两侧 50 米设置绕行提示牌，早高峰引导非机动车绕行育才支路");
+        nf11.setTrafficPoliceAssist(true);
+        nf11.setTrafficPoliceNote("已请辖区交警夜班组到场，调取 JX-0112/JX-0113 监控追查肇事车辆并维持早高峰秩序");
+        nf11.setCreatedAt(i11.getCreatedAt().plusHours(7));
+        nf11.setUpdatedAt(i11.getCreatedAt().plusHours(9));
+        nightFailureRepo.save(nf11);
+        // 加派反光围挡/封道/值守费用并入街道应急垫付
+        emergencyRepo.findByIncidentId(i11.getId()).ifPresent(em -> em.setCost(new BigDecimal("1900")));
+        CompensationCase c11 = new CompensationCase();
+        c11.setIncidentId(i11.getId());
+        c11.setClaimantName("市民李四");
+        c11.setClaimantPhone("13800000003");
+        c11.setDamageType("人身伤害");
+        c11.setClaimAmount(new BigDecimal("30000"));
+        c11.setAccidentProof("二次事故（夜间围护失效）：" + nf11.getSecondAccidentAt()
+                + " 骑车人左臂骨折、电动车受损；医院诊断证明、监控截图 JX-0112");
+        c11.setStatus(Constants.CompStatus.FILED);
+        c11.setCreatedAt(i11.getCreatedAt().plusHours(8));
+        compensationRepo.save(c11);
+
+        // 12. 夜间围护失效（公交站附近，围护方式不足）：二次事故刚发生、已到场核查并认定原因，待值班员加派措施
+        Incident i12 = base("MH20261002-0001", citizen, "松动", "和平路12路公交站旁", "次干道", "中",
+                false, null, 0);
+        i12.setCreatedAt(LocalDateTime.now().minusHours(6));
+        i12.setUpdatedAt(i12.getCreatedAt());
+        i12.setStatus(Constants.IncidentStatus.SECURED);
+        i12.setEmergencyStatus(Constants.EmergencyStatus.SECURED);
+        i12.setOwnerStatus(Constants.OwnerStatus.INVESTIGATING);
+        i12.setHasDamage(true);
+        i12.setDamageDesc("二次事故：骑车人碾过翘起井盖摔伤");
+        incidentRepo.save(i12);
+        EmergencyMeasure em12 = new EmergencyMeasure();
+        em12.setIncidentId(i12.getId());
+        em12.setOfficerId(street.getId());
+        em12.setDispatchedAt(i12.getCreatedAt().plusMinutes(12));
+        em12.setArrivedAt(i12.getCreatedAt().plusMinutes(100));
+        em12.setSecuredAt(i12.getCreatedAt().plusMinutes(130));
+        em12.setMeasures("警示锥");
+        em12.setCost(new BigDecimal("120"));
+        em12.setNote("傍晚仅在井盖周边放置 4 个警示锥");
+        em12.setCreatedAt(em12.getDispatchedAt());
+        emergencyRepo.save(em12);
+        NightProtectionFailure nf12 = new NightProtectionFailure();
+        nf12.setIncidentId(i12.getId());
+        nf12.setOfficerId(street.getId());
+        nf12.setFirstReportAt(i12.getCreatedAt());
+        nf12.setProtectionPhotos("[\"/uploads/demo-cone-2.png\"]");
+        nf12.setPatrolId(street.getId());
+        nf12.setPatrolArrivedAt(LocalDateTime.now().minusMinutes(40));
+        nf12.setDisplacedAt(LocalDateTime.now().minusMinutes(95));
+        nf12.setSecondAccidentAt(LocalDateTime.now().minusMinutes(60));
+        nf12.setSecondAccidentDesc("夜间公交站乘客集散，警示锥被进站公交车碰倒后滚离井口，第二名骑车人碾过翘起井盖摔倒受伤");
+        nf12.setHasInjury(true);
+        nf12.setInjuryDesc("骑车人膝盖、手掌擦伤，手机屏幕碎裂");
+        nf12.setStatus(Constants.NightFailureStatus.ASSESSED);
+        nf12.setCause(Constants.NightFailureCause.INADEQUATE_PROTECTION);
+        nf12.setCauseAnalysis("原围护仅为警示锥，无反光围挡与固定措施，公交站夜间车辆靠站频繁，围护方式不足是失效主因；巡查间隔 2 小时亦偏长。");
+        nf12.setSensitiveLocation(Constants.SensitiveLocation.BUS_STOP);
+        nf12.setPeakHours("07:00-09:00,17:00-19:00");
+        nf12.setLighting("一般");
+        nf12.setCameraIds("GJ-0207,GJ-0208");
+        nf12.setCreatedAt(LocalDateTime.now().minusMinutes(95));
+        nf12.setUpdatedAt(LocalDateTime.now().minusMinutes(40));
+        nightFailureRepo.save(nf12);
+        CompensationCase c12 = new CompensationCase();
+        c12.setIncidentId(i12.getId());
+        c12.setClaimantName("市民张三");
+        c12.setClaimantPhone("13800000002");
+        c12.setDamageType("人身伤害");
+        c12.setClaimAmount(new BigDecimal("5000"));
+        c12.setAccidentProof("二次事故（夜间围护失效）：" + nf12.getSecondAccidentAt()
+                + " 骑车人膝盖手掌擦伤、手机损坏；公交站监控 GJ-0207");
+        c12.setStatus(Constants.CompStatus.FILED);
+        c12.setCreatedAt(nf12.getSecondAccidentAt());
+        compensationRepo.save(c12);
     }
 
     private Incident base(String code, User reporter, String issueType, String address, String roadType,

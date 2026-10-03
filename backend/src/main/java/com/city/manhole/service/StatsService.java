@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class StatsService {
     private final IncidentRepo incidentRepo;
     private final EmergencyMeasureRepo emergencyRepo;
+    private final NightProtectionFailureRepo nightRepo;
     private final RepairOrderRepo repairOrderRepo;
     private final CompensationRepo compensationRepo;
     private final CostAllocationRepo costRepo;
@@ -66,17 +67,94 @@ public class StatsService {
         BigDecimal totalEmergencyCost = emergencyRepo.findAll().stream()
                 .map(EmergencyMeasure::getCost).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        List<NightProtectionFailure> nightAll = nightRepo.findAll();
+        long nightUnhandled = nightAll.stream()
+                .filter(f -> !Constants.NightFailureStatus.HANDLED.equals(f.getStatus())).count();
+        long nightInjury = nightAll.stream().filter(NightProtectionFailure::getHasInjury).count();
+
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("totalIncidents", all.size());
         m.put("byStatus", byStatus);
         m.put("byDanger", byDanger);
         m.put("pendingEmergency", pendingEmergency);
         m.put("pendingOwner", pendingOwner);
+        m.put("nightFailures", nightAll.size());
+        m.put("nightFailureUnhandled", nightUnhandled);
+        m.put("nightSecondInjuries", nightInjury);
         m.put("timeoutOrders", timeoutOrders);
         m.put("totalOrders", orders.size());
         m.put("totalCompensation", totalComp);
         m.put("totalEmergencyCost", totalEmergencyCost);
         return m;
+    }
+
+    /**
+     * 夜间围护失效统计：按失效原因归集处置时长，列出敏感场所二次事故，
+     * 用于评估是否需要夜间加密巡查、增设反光围挡与值守机制。
+     */
+    public Map<String, Object> nightFailures() {
+        checkRole();
+        List<NightProtectionFailure> all = nightRepo.findAll();
+        Map<String, List<NightProtectionFailure>> byCause = all.stream()
+                .collect(Collectors.groupingBy(f -> f.getCause() == null ? "未认定" : f.getCause()));
+        List<Map<String, Object>> causeRows = new ArrayList<>();
+        for (String cause : List.of(
+                Constants.NightFailureCause.INADEQUATE_PROTECTION,
+                Constants.NightFailureCause.PATROL_GAP,
+                Constants.NightFailureCause.EXTERNAL_DAMAGE, "未认定")) {
+            List<NightProtectionFailure> list = byCause.getOrDefault(cause, List.of());
+            long handled = list.stream()
+                    .filter(f -> Constants.NightFailureStatus.HANDLED.equals(f.getStatus())).count();
+            long sensitive = list.stream()
+                    .filter(f -> !Constants.SensitiveLocation.NONE.equals(f.getSensitiveLocation())).count();
+            long totalMinutes = 0;
+            long withDuration = 0;
+            for (NightProtectionFailure f : list) {
+                if (f.getDisplacedAt() != null && f.getPatrolArrivedAt() != null
+                        && f.getPatrolArrivedAt().isAfter(f.getDisplacedAt())) {
+                    totalMinutes += Duration.between(f.getDisplacedAt(), f.getPatrolArrivedAt()).toMinutes();
+                    withDuration++;
+                }
+            }
+            Map<String, Object> row = new LinkedHashMap<String, Object>();
+            row.put("cause", "未认定".equals(cause) ? "未认定" : NightFailureService.causeName(cause));
+            row.put("count", (long) list.size());
+            row.put("handled", handled);
+            row.put("sensitive", sensitive);
+            row.put("avgResponseMinutes", withDuration == 0 ? 0 : totalMinutes / withDuration);
+            causeRows.add(row);
+        }
+
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (NightProtectionFailure f : all) {
+            Incident inc = incidentRepo.findById(f.getIncidentId()).orElse(null);
+            Map<String, Object> row = new LinkedHashMap<String, Object>();
+            row.put("incidentId", f.getIncidentId());
+            row.put("incidentCode", inc == null ? "-" : inc.getCode());
+            row.put("address", inc == null ? "-" : inc.getAddress());
+            row.put("dangerLevel", inc == null ? null : inc.getDangerLevel());
+            row.put("status", f.getStatus());
+            row.put("cause", f.getCause() == null ? "未认定" : NightFailureService.causeName(f.getCause()));
+            row.put("sensitiveLocation", NightFailureService.placeName(f.getSensitiveLocation()));
+            row.put("lighting", f.getLighting());
+            row.put("hasInjury", f.getHasInjury());
+            row.put("secondAccidentAt", f.getSecondAccidentAt());
+            row.put("decisions", f.getDecisions());
+            row.put("detourNotice", f.getDetourNotice());
+            row.put("trafficPoliceAssist", f.getTrafficPoliceAssist());
+            list.add(row);
+        }
+        list.sort(Comparator.comparing(
+                (Map<String, Object> row) -> (java.time.LocalDateTime) row.get("secondAccidentAt"),
+                Comparator.nullsFirst(Comparator.naturalOrder())).reversed());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("total", all.size());
+        result.put("unhandled", all.stream()
+                .filter(f -> !Constants.NightFailureStatus.HANDLED.equals(f.getStatus())).count());
+        result.put("byCause", causeRows);
+        result.put("list", list);
+        return result;
     }
 
     /** 高发路段 TOP（按路段名归集，如“人民路与建设大街交口”→“人民路”） */

@@ -63,6 +63,35 @@ public final class Constants {
         public static final String ALLOCATED = "ALLOCATED";   // 已分摊结案
     }
 
+    /** 夜间临时围护失效处置状态 */
+    public static final class NightFailureStatus {
+        public static final String REPORTED = "REPORTED";   // 已登记失效/二次事故，待巡查到场核查
+        public static final String VERIFIED = "VERIFIED";   // 巡查已到场核查，待原因认定
+        public static final String ASSESSED = "ASSESSED";   // 已认定失效原因，待处置
+        public static final String HANDLED = "HANDLED";     // 已加派措施处置完毕
+    }
+
+    /** 围护失效原因认定 */
+    public static final class NightFailureCause {
+        public static final String INADEQUATE_PROTECTION = "INADEQUATE_PROTECTION"; // 围护方式不足
+        public static final String PATROL_GAP = "PATROL_GAP";                       // 巡查间隔过长
+        public static final String EXTERNAL_DAMAGE = "EXTERNAL_DAMAGE";             // 外力破坏
+    }
+
+    /** 失效后加派措施 */
+    public static final class NightDecision {
+        public static final String REFLECTIVE_BARRIER = "REFLECTIVE_BARRIER"; // 加派反光围挡
+        public static final String ROAD_CLOSURE = "ROAD_CLOSURE";             // 临时封道
+        public static final String GUARD_DUTY = "GUARD_DUTY";                 // 安排专人值守
+    }
+
+    /** 二次事故敏感场所 */
+    public static final class SensitiveLocation {
+        public static final String NONE = "NONE";                 // 非敏感场所
+        public static final String SCHOOL_GATE = "SCHOOL_GATE";   // 学校门口
+        public static final String BUS_STOP = "BUS_STOP";         // 公交站附近
+    }
+
     /** 赔付责任认定 */
     public static final class Responsibility {
         public static final String OWNER = "OWNER";             // 权属单位全责

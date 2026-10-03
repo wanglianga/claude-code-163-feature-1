@@ -115,6 +115,64 @@
       </el-col>
     </el-row>
 
+    <!-- 夜间围护失效 -->
+    <el-row :gutter="16">
+      <el-col :xs="24" :md="10">
+        <el-card class="page-card">
+          <template #header>
+            <div class="flex-between">
+              <b>夜间围护失效原因</b>
+              <span class="text-muted">共 {{ nightFailures.total || 0 }} 起 · 待处置 {{ nightFailures.unhandled || 0 }} 起</span>
+            </div>
+          </template>
+          <el-table :data="nightFailures.byCause" size="large">
+            <el-table-column prop="cause" label="失效原因" min-width="110" />
+            <el-table-column prop="count" label="次数" width="70" />
+            <el-table-column label="敏感场所" width="90">
+              <template #default="{ row }">
+                <el-tag v-if="row.sensitive > 0" type="danger" size="small">{{ row.sensitive }}</el-tag>
+                <span v-else class="text-muted">0</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="平均响应" width="100">
+              <template #default="{ row }">{{ row.avgResponseMinutes }} 分</template>
+            </el-table-column>
+            <el-table-column label="已处置">
+              <template #default="{ row }">{{ row.handled }}/{{ row.count }}</template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :md="14">
+        <el-card class="page-card">
+          <template #header><b>二次事故事件清单</b></template>
+          <el-table :data="nightFailures.list" size="large" max-height="300"
+                    @row-click="(r) => $router.push(`/incidents/${r.incidentId}`)" style="cursor: pointer">
+            <el-table-column prop="incidentCode" label="事件编号" width="150" />
+            <el-table-column prop="address" label="地址" min-width="140" show-overflow-tooltip />
+            <el-table-column label="原因" width="100">
+              <template #default="{ row }">
+                <el-tag type="warning" size="small">{{ row.cause }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="场所/照明" width="110">
+              <template #default="{ row }">
+                <div>{{ row.sensitiveLocation }}</div>
+                <div class="text-muted">{{ row.lighting || '-' }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column label="处置" width="90">
+              <template #default="{ row }">
+                <el-tag :type="NIGHT_FAILURE_STATUS[row.status]?.type" size="small">
+                  {{ NIGHT_FAILURE_STATUS[row.status]?.label }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- 管理建议 -->
     <el-card class="page-card">
       <template #header><b>治理建议（依据统计数据自动生成）</b></template>
@@ -132,9 +190,9 @@ import { computed, onMounted, ref, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import {
   apiStatsOverview, apiStatsHotspots, apiStatsDisputes,
-  apiStatsTimeouts, apiStatsCompensation, apiStatsEmergency
+  apiStatsTimeouts, apiStatsCompensation, apiStatsEmergency, apiStatsNightFailures
 } from '../api'
-import { dangerType, money } from '../utils/format'
+import { NIGHT_FAILURE_STATUS, dangerType, money } from '../utils/format'
 
 const overview = ref({})
 const hotspots = ref([])
@@ -142,6 +200,7 @@ const disputes = ref({})
 const timeouts = ref({})
 const compensation = ref({ byMonth: [], byResponsibility: [] })
 const emergency = ref([])
+const nightFailures = ref({ byCause: [], list: [] })
 
 const hotspotChart = ref(null)
 const compChart = ref(null)
@@ -152,6 +211,10 @@ const overviewCards = computed(() => [
   { label: '待应急处置', value: overview.value.pendingEmergency ?? '-', color: '#f56c6c' },
   { label: '责任待定', value: overview.value.pendingOwner ?? '-', color: '#f56c6c' },
   { label: '维修超时工单', value: overview.value.timeoutOrders ?? '-', color: '#e6a23c' },
+  { label: '夜间围护失效', value: overview.value.nightFailures ?? '-', color: '#f56c6c' },
+  { label: '待处置/二次伤', value: overview.value.nightFailures != null
+      ? `${overview.value.nightFailureUnhandled ?? 0} / ${overview.value.nightSecondInjuries ?? 0}` : '-',
+    color: '#f56c6c' },
   { label: '赔付总额', value: overview.value.totalCompensation != null ? money(overview.value.totalCompensation) : '-', color: '#b88230' },
   { label: '街道垫付应急费', value: overview.value.totalEmergencyCost != null ? money(overview.value.totalEmergencyCost) : '-', color: '#7b61ff' }
 ])
@@ -176,6 +239,17 @@ const suggestions = computed(() => {
   if (over.length) {
     s.push(`应急到场超时：${over.map(e => `${e.dangerLevel}危 ${e.overLimit} 次`).join('、')}，建议优化街道值班调度与夜间备勤。`)
   }
+  const nightUnhandled = nightFailures.value.unhandled || 0
+  if (nightUnhandled > 0) {
+    s.push(`当前有 ${nightUnhandled} 起夜间围护失效尚未加固处置，存在再次伤人风险，请立即加派反光围挡/封道或专人值守。`)
+  }
+  const nightCauses = nightFailures.value.byCause || []
+  const inadequate = nightCauses.find(c => c.cause === '围护方式不足')
+  const gap = nightCauses.find(c => c.cause === '巡查间隔过长')
+  const external = nightCauses.find(c => c.cause === '外力破坏')
+  if (inadequate?.count) s.push(`夜间围护方式不足 ${inadequate.count} 起：夜间高危点警示锥应升级为反光围挡并增设警示灯，学校门口/公交站配套绕行提示。`)
+  if (gap?.count) s.push(`巡查间隔过长 ${gap.count} 起：应缩短夜间巡查间隔，学校门口/公交站等人流密集点高峰前后加密巡查或安排专人值守。`)
+  if (external?.count) s.push(`外力破坏 ${external.count} 起：应登记周边监控编号、联动交警追查肇事车辆，必要时临时封道。`)
   if (!s.length) s.push('各项指标正常，保持现有巡检与移交规则。')
   return s
 })
@@ -223,10 +297,10 @@ function renderCharts() {
 }
 
 onMounted(async () => {
-  ;[overview.value, hotspots.value, disputes.value, timeouts.value, compensation.value, emergency.value] =
+  ;[overview.value, hotspots.value, disputes.value, timeouts.value, compensation.value, emergency.value, nightFailures.value] =
     await Promise.all([
       apiStatsOverview(), apiStatsHotspots(), apiStatsDisputes(),
-      apiStatsTimeouts(), apiStatsCompensation(), apiStatsEmergency()
+      apiStatsTimeouts(), apiStatsCompensation(), apiStatsEmergency(), apiStatsNightFailures()
     ])
   await nextTick()
   renderCharts()

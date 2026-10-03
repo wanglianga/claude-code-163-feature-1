@@ -51,6 +51,31 @@ export const RESPONSIBILITY = {
   UNDETERMINED: '无法认定'
 }
 
+export const NIGHT_FAILURE_STATUS = {
+  REPORTED: { label: '已登记待核查', type: 'danger' },
+  VERIFIED: { label: '已到场待认定', type: 'warning' },
+  ASSESSED: { label: '已认定待处置', type: 'warning' },
+  HANDLED: { label: '已加固处置', type: 'success' }
+}
+
+export const NIGHT_CAUSE = {
+  INADEQUATE_PROTECTION: '围护方式不足',
+  PATROL_GAP: '巡查间隔过长',
+  EXTERNAL_DAMAGE: '外力破坏'
+}
+
+export const NIGHT_DECISION = {
+  REFLECTIVE_BARRIER: '加派反光围挡',
+  ROAD_CLOSURE: '临时封道',
+  GUARD_DUTY: '专人值守'
+}
+
+export const SENSITIVE_LOCATION = {
+  NONE: '非敏感场所',
+  SCHOOL_GATE: '学校门口',
+  BUS_STOP: '公交站附近'
+}
+
 export const dangerType = (level) => ({ 高: 'danger', 中: 'warning', 低: 'info' }[level] || 'info')
 
 export const money = (v) => `¥${Number(v || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`
