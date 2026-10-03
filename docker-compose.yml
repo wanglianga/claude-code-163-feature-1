@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: manhole
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: Asia/Shanghai
+    ports:
+      - "5433:5432"
+    volumes:
+      - manhole-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d manhole"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/manhole
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ""
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - manhole-uploads:/app/uploads
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  manhole-pgdata:
+  manhole-uploads:

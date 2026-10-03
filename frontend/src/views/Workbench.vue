@@ -57,7 +57,14 @@
           <el-tab-pane v-for="t in tabs" :key="t.label" :label="`${t.label}(${t.list.length})`" :name="t.label" />
         </el-tabs>
         <el-table :data="currentList" size="large" @row-click="(r) => $router.push(`/incidents/${r.id}`)" style="cursor: pointer">
-          <el-table-column prop="code" label="事件编号" width="160" />
+          <el-table-column prop="code" label="事件编号" width="160">
+            <template #default="{ row }">
+              {{ row.code }}
+              <el-tooltip v-if="row.nightFailureCount" content="发生夜间围护失效" placement="top">
+                <el-tag type="danger" effect="dark" size="small" style="margin-left: 2px">夜{{ row.nightFailureCount }}</el-tag>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column prop="issueType" label="问题" width="70" />
           <el-table-column prop="address" label="地址" min-width="170" />
           <el-table-column prop="roadType" label="道路" width="80" />

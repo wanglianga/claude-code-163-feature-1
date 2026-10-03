@@ -52,6 +52,13 @@ export const apiIncidentDetail = (id) => http.get(`/api/incidents/${id}`)
 export const apiDispatch = (id) => http.post(`/api/incidents/${id}/emergency/dispatch`)
 export const apiSecure = (id, data) => http.post(`/api/incidents/${id}/emergency/secure`, data)
 
+// ---------- 夜间围护失效 ----------
+export const apiNightPatrol = (id, data) => http.post(`/api/incidents/${id}/night-patrols`, data)
+export const apiNightFailure = (id, data) => http.post(`/api/incidents/${id}/night-failures`, data)
+export const apiNightFailureDecision = (id, data) => http.post(`/api/night-failures/${id}/decision`, data)
+export const apiNightFailureReinforce = (id, data) => http.post(`/api/night-failures/${id}/reinforce`, data)
+export const apiNightFailures = () => http.get('/api/night-failures')
+
 // ---------- 权属 ----------
 export const apiInvestigate = (id, data) => http.post(`/api/incidents/${id}/investigation`, data)
 export const apiClaim = (id, data) => http.post(`/api/incidents/${id}/claim`, data)

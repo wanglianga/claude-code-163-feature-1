@@ -63,6 +63,20 @@ public final class Constants {
         public static final String ALLOCATED = "ALLOCATED";   // 已分摊结案
     }
 
+    /** 夜间临时围护失效原因认定 */
+    public static final class FailureCause {
+        public static final String INADEQUATE = "INADEQUATE"; // 围护方式不足（仅警示锥/无反光围挡）
+        public static final String INTERVAL_TOO_LONG = "INTERVAL_TOO_LONG"; // 巡查间隔过长
+        public static final String EXTERNAL_DAMAGE = "EXTERNAL_DAMAGE";     // 外力破坏（车辆撞倒/人为移动）
+    }
+
+    /** 失效后加固处置措施（可多选） */
+    public static final class ReinforceMeasure {
+        public static final String REFLECTIVE_BARRIER = "REFLECTIVE_BARRIER"; // 加派反光围挡
+        public static final String TEMP_CLOSURE = "TEMP_CLOSURE";             // 临时封道
+        public static final String GUARD_DUTY = "GUARD_DUTY";                 // 安排专人值守
+    }
+
     /** 赔付责任认定 */
     public static final class Responsibility {
         public static final String OWNER = "OWNER";             // 权属单位全责

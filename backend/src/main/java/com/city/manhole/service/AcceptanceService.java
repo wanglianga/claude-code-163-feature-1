@@ -81,10 +81,11 @@ public class AcceptanceService {
         BigDecimal emergencyCost = emergencyRepo.findByIncidentId(inc.getId())
                 .map(EmergencyMeasure::getCost).orElse(BigDecimal.ZERO);
         BigDecimal repairCost = order.getRepairCost() == null ? BigDecimal.ZERO : order.getRepairCost();
-        BigDecimal compAmount = compensationRepo.findByIncidentId(inc.getId())
+        BigDecimal compAmount = compensationRepo.findByIncidentIdOrderByCreatedAtAsc(inc.getId()).stream()
                 .filter(c -> Constants.CompStatus.APPROVED.equals(c.getStatus())
                         || Constants.CompStatus.PAID.equals(c.getStatus()))
-                .map(CompensationCase::getApprovedAmount).orElse(BigDecimal.ZERO);
+                .map(CompensationCase::getApprovedAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         CostAllocation ca = costRepo.findByIncidentId(inc.getId()).orElseGet(CostAllocation::new);
         ca.setIncidentId(inc.getId());

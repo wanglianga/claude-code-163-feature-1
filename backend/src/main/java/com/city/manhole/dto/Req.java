@@ -17,6 +17,48 @@ public final class Req {
 
     public record SecureReq(List<String> measures, BigDecimal cost, String note) {}
 
+    /** 夜间巡查到场记录 */
+    public record NightPatrolReq(String roundName, java.time.LocalDateTime arrivedAt, Boolean intact,
+                                 String siteStatus, List<String> photos,
+                                 java.time.LocalDateTime coneMovedAt, String note) {}
+
+    /** 夜间围护失效 + 二次事故登记 */
+    public record NightFailureReq(
+            java.time.LocalDateTime lastPatrolAt,
+            java.time.LocalDateTime coneMovedAt,
+            String reportedBy,
+            List<String> photos,
+            Boolean hasSecondAccident,
+            java.time.LocalDateTime secondAccidentAt,
+            String injuredName,
+            String injuredPhone,
+            String injuryDesc,
+            String accidentDesc,
+            List<String> accidentPhotos,
+            String cause,
+            String causeAnalysis,
+            List<String> reinforceMeasures,
+            String decisionNote,
+            Boolean sensitiveLocation,
+            String locationType,
+            String locationName,
+            String peakHours,
+            String lighting,
+            String cameraIds,
+            Boolean detourNotice,
+            String detourNote,
+            Boolean trafficPoliceAssist,
+            String trafficPoliceNote) {}
+
+    /** 仅原因判定与加固决策 */
+    public record NightFailureDecisionReq(String cause, String causeAnalysis,
+                                          List<String> reinforceMeasures, String decisionNote,
+                                          Boolean detourNotice, String detourNote,
+                                          Boolean trafficPoliceAssist, String trafficPoliceNote) {}
+
+    /** 加固措施落实确认 */
+    public record NightFailureReinforceReq(String note) {}
+
     public record InvestigateReq(String manholeMarking, String pipelineInfo, String constructionHistory,
                                  String merchantInfo, String cityLedger, String conclusion,
                                  Long confirmedOwnerId, String note) {}

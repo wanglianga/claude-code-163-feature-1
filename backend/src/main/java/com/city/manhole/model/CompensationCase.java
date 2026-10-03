@@ -17,7 +17,14 @@ public class CompensationCase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    /** 案件类型：PRIMARY 首次上报时损伤 / SECOND 夜间围护失效二次事故 */
+    @Column(nullable = false, length = 16)
+    private String caseType = "PRIMARY";
+
+    /** SECOND 类型案件关联的夜间围护失效记录 id */
+    private Long nightFailureId;
+
+    @Column(nullable = false)
     private Long incidentId;
 
     /** 经办的赔付专员 */

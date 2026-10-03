@@ -15,6 +15,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="claimantName" label="索赔人" width="100" />
+        <el-table-column label="案件类型" width="120">
+          <template #default="{ row }">
+            <el-tag v-if="row.caseType === 'SECOND'" type="danger" size="small">二次事故</el-tag>
+            <el-tag v-else type="info" size="small" effect="plain">首次损伤</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="damageType" label="损失类型" width="100" />
         <el-table-column label="索赔金额" width="110">
           <template #default="{ row }">{{ money(row.claimAmount) }}</template>

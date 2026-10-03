@@ -28,6 +28,8 @@ public class IncidentService {
     private final AcceptanceRepo acceptanceRepo;
     private final CompensationRepo compensationRepo;
     private final CostAllocationRepo costRepo;
+    private final NightPatrolRepo nightPatrolRepo;
+    private final NightFailureRepo nightFailureRepo;
     private final NotificationService notificationService;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -133,6 +135,7 @@ public class IncidentService {
         m.put("ownerStatus", inc.getOwnerStatus());
         m.put("responsibilityPending", inc.getResponsibilityPending());
         m.put("createdAt", inc.getCreatedAt());
+        m.put("nightFailureCount", nightFailureRepo.findByIncidentIdOrderByConeMovedAtAsc(inc.getId()).size());
         m.put("ownerOrg", inc.getOwnerId() == null ? null :
                 userRepo.findById(inc.getOwnerId()).map(User::getOrgName).orElse(null));
         return m;
@@ -197,7 +200,42 @@ public class IncidentService {
         }
         m.put("acceptances", accs);
 
-        compensationRepo.findByIncidentId(id).ifPresent(c -> m.put("compensation", c));
+        // 夜间围护巡查与失效处理记录
+        List<Map<String, Object>> patrols = new ArrayList<>();
+        for (NightPatrol p : nightPatrolRepo.findByIncidentIdOrderByArrivedAtAsc(id)) {
+            Map<String, Object> pm = new LinkedHashMap<>();
+            pm.put("patrol", p);
+            pm.put("photoList", readJson(p.getPhotos()));
+            pm.put("officerName", userRepo.findById(p.getOfficerId()).map(User::getName).orElse("未知"));
+            patrols.add(pm);
+        }
+        m.put("nightPatrols", patrols);
+
+        List<Map<String, Object>> failures = new ArrayList<>();
+        for (NightFailure nf : nightFailureRepo.findByIncidentIdOrderByConeMovedAtAsc(id)) {
+            Map<String, Object> fm = new LinkedHashMap<>();
+            fm.put("failure", nf);
+            fm.put("photoList", readJson(nf.getPhotos()));
+            fm.put("accidentPhotoList", readJson(nf.getAccidentPhotos()));
+            fm.put("officerName", userRepo.findById(nf.getOfficerId()).map(User::getName).orElse("未知"));
+            if (nf.getDecisionOfficerId() != null) {
+                fm.put("decisionOfficerName",
+                        userRepo.findById(nf.getDecisionOfficerId()).map(User::getName).orElse("未知"));
+            }
+            failures.add(fm);
+        }
+        m.put("nightFailures", failures);
+
+        List<Map<String, Object>> comps = new ArrayList<>();
+        for (CompensationCase c : compensationRepo.findByIncidentIdOrderByCreatedAtAsc(id)) {
+            Map<String, Object> cm = new LinkedHashMap<>();
+            cm.put("case", c);
+            cm.put("specialistName", c.getSpecialistId() == null ? null :
+                    userRepo.findById(c.getSpecialistId()).map(User::getName).orElse(null));
+            comps.add(cm);
+        }
+        m.put("compensations", comps);
+        if (!comps.isEmpty()) m.put("compensation", comps.get(0).get("case")); // 兼容旧前端
         costRepo.findByIncidentId(id).ifPresent(c -> m.put("costAllocation", c));
         return m;
     }

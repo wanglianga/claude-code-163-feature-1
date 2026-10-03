@@ -32,3 +32,5 @@ app:
     high: 120
     mid: 240
     low: 480
+  # 夜间临时围护巡查时限（分钟）：警示锥移位距上次巡查超过该值判定为巡查间隔过长
+  night-patrol-limit-minutes: 180
